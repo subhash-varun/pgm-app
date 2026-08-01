@@ -8,6 +8,7 @@ import '../models/tenant.dart';
 import '../models/room.dart';
 import '../models/inventory_item.dart';
 import '../models/maintenance_request.dart';
+import '../models/rent_ledger.dart';
 import '../models/staff.dart';
 import '../models/user.dart';
 
@@ -79,6 +80,20 @@ class TenantsService {
 
   static Future<void> delete(int id) async {
     await ApiClient.dio.delete<dynamic>('/api/admin/tenants/$id');
+  }
+
+  static Future<void> initiateNotice(int tenantId, Json payload) async {
+    await ApiClient.dio.post<dynamic>('/api/admin/tenants/$tenantId/notice', data: payload);
+  }
+
+  static Future<TenantSettlementSummary> getSettlementSummary(int tenantId) async {
+    final res = await ApiClient.dio.get<dynamic>('/api/admin/tenants/$tenantId/settlement-summary');
+    return TenantSettlementSummary.fromJson(_data(res));
+  }
+
+  static Future<TenantSettlementResult> completeExit(int tenantId, Json payload) async {
+    final res = await ApiClient.dio.post<dynamic>('/api/admin/tenants/$tenantId/exit', data: payload);
+    return TenantSettlementResult.fromJson(_data(res));
   }
 }
 
@@ -228,6 +243,10 @@ class MaintenanceService {
       '/api/admin/maintenance/$id/assign',
       data: {'assignedTo': staffName},
     );
+  }
+
+  static Future<void> create(Json payload) async {
+    await ApiClient.dio.post<dynamic>('/api/admin/maintenance', data: payload);
   }
 }
 
@@ -414,3 +433,57 @@ class NotificationList {
     required this.hasNext,
   });
 }
+
+class RentLedgerService {
+  static Future<PageData<RentLedger>> getLedgers({
+    String month = '',
+    String? status,
+    int page = 0,
+    int size = 10,
+  }) async {
+    final res = await ApiClient.dio.get<dynamic>(
+      '/api/admin/rent-ledger',
+      queryParameters: {
+        'month': month,
+        if (status != null && status.isNotEmpty && status != 'ALL') 'status': status,
+        'page': page,
+        'size': size,
+      },
+    );
+    return _page(res, RentLedger.fromJson);
+  }
+
+  static Future<RentLedgerSummary> getSummary({String month = ''}) async {
+    final res = await ApiClient.dio.get<dynamic>(
+      '/api/admin/rent-ledger/summary',
+      queryParameters: {'month': month},
+    );
+    return RentLedgerSummary.fromJson(_data(res));
+  }
+
+  static Future<List<RentLedger>> getLedgersByTenant(int tenantId) async {
+    final res = await ApiClient.dio.get<dynamic>(
+      '/api/admin/rent-ledger/tenant/$tenantId',
+    );
+    final raw = res.data is Map ? (res.data as Map)['data'] : null;
+    final items = raw is List
+        ? raw.map((e) => RentLedger.fromJson(Map<String, dynamic>.from(e as Map))).toList()
+        : <RentLedger>[];
+    return items;
+  }
+
+  static Future<void> generateLedger({String month = ''}) async {
+    await ApiClient.dio.post<dynamic>(
+      '/api/admin/rent-ledger/generate',
+      queryParameters: {'month': month},
+    );
+  }
+
+  static Future<void> payRent(int ledgerId, Json payload) async {
+    await ApiClient.dio.post<dynamic>(
+      '/api/admin/rent-ledger/$ledgerId/pay',
+      data: payload,
+    );
+  }
+}
+

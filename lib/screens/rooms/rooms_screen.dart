@@ -137,7 +137,16 @@ class _RoomsScreenState extends State<RoomsScreen> with InfiniteScroll {
         actions: [
           IconButton(
             onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh),
+            icon: _loading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.palette.primary,
+                    ),
+                  )
+                : const Icon(Icons.refresh),
           ),
         ],
         bottom: PreferredSize(
@@ -173,10 +182,19 @@ class _RoomsScreenState extends State<RoomsScreen> with InfiniteScroll {
       ),
       body: RefreshIndicator(
         onRefresh: _load,
-        child: ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.all(16),
+        child: Column(
           children: [
+            if (_loading && _data != null)
+              LinearProgressIndicator(
+                minHeight: 3,
+                backgroundColor: Colors.transparent,
+                color: context.palette.primary,
+              ),
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
             Row(
               children: [
                 _StatChip(
@@ -227,6 +245,9 @@ class _RoomsScreenState extends State<RoomsScreen> with InfiniteScroll {
             ),
             const SizedBox(height: 12),
             _buildList(),
+          ],
+        ),
+      ),
           ],
         ),
       ),
@@ -334,10 +355,10 @@ class _RoomCard extends StatelessWidget {
       _ => p.warning,
     };
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: p.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: p.border),
       ),
       child: Column(
@@ -346,34 +367,48 @@ class _RoomCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
+                  color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.meeting_room, size: 20, color: statusColor),
+                child: Icon(Icons.meeting_room_outlined, size: 20, color: statusColor),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Room ${room.roomNumber}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: p.textPrimary,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Room ${room.roomNumber}',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: p.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: p.surfaceAlt,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            capitalize(room.roomType),
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: p.textSecondary),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${capitalize(room.roomType)} Room',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: p.textSecondary,
-                      ),
+                      room.facilities.isEmpty ? 'No facilities listed' : room.facilities,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: p.textSecondary),
                     ),
                   ],
                 ),
@@ -395,51 +430,32 @@ class _RoomCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.info_outline,
-                  size: 13, color: p.textSecondary),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  room.facilities.isEmpty
-                      ? 'No facilities listed'
-                      : room.facilities,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: p.textPrimary,
-                  ),
-                ),
-              ),
               Text(
-                'Since ${formatDate(room.createdAt)}',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: p.textTertiary,
-                ),
+                'Added ${formatDate(room.createdAt)}',
+                style: TextStyle(fontSize: 12, color: p.textTertiary, fontWeight: FontWeight.w500),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Divider(height: 1, color: p.border),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: onEdit,
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Edit'),
-              ),
-              const SizedBox(width: 4),
-              TextButton.icon(
-                onPressed: onDelete,
-                style: TextButton.styleFrom(
-                  foregroundColor: p.danger,
-                ),
-                icon: const Icon(Icons.delete_outline, size: 18),
-                label: const Text('Delete'),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: onEdit,
+                    icon: Icon(Icons.edit_outlined, size: 18, color: p.textSecondary),
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: EdgeInsets.zero,
+                    tooltip: 'Edit Room',
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    onPressed: onDelete,
+                    icon: Icon(Icons.delete_outline, size: 18, color: p.danger),
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: EdgeInsets.zero,
+                    tooltip: 'Delete Room',
+                  ),
+                ],
               ),
             ],
           ),

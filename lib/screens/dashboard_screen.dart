@@ -9,6 +9,8 @@ import '../models/payment.dart';
 import '../services/api_services.dart';
 import '../widgets/common.dart';
 import '../widgets/status_badge.dart';
+import 'payments/rent_ledger_screen.dart';
+import 'payments/security_deposit_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -70,6 +72,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RentLedgerScreen()),
+              );
+            },
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Rent Ledger',
+          ),
+          IconButton(
             onPressed: _loading ? null : _load,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -110,6 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
     final s = _summary!;
+    final p = context.palette;
     final occupancyRate = s.occupancy.totalRooms > 0
         ? (s.occupancy.occupiedRooms / s.occupancy.totalRooms) * 100
         : 0.0;
@@ -162,6 +174,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         const SizedBox(height: 16),
+
+        // Quick Financial Engine Actions
+        Row(
+          children: [
+            Expanded(
+              child: _quickActionTile(
+                p: p,
+                icon: Icons.calendar_month,
+                color: p.primary,
+                title: 'Rent Ledger',
+                subtitle: 'Monthly Dues',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const RentLedgerScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _quickActionTile(
+                p: p,
+                icon: Icons.shield_outlined,
+                color: p.purple,
+                title: 'Deposits',
+                subtitle: 'Refund Ledger',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SecurityDepositScreen()),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         if (s.revenueChart.isNotEmpty) ...[
           _RevenueChartCard(data: s.revenueChart),
           const SizedBox(height: 16),
@@ -179,6 +223,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _RecentActivitiesCard(activities: s.recentActivities),
         ],
       ],
+    );
+  }
+
+  Widget _quickActionTile({
+    required AppPalette p,
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: p.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: p.textPrimary)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: p.textSecondary)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

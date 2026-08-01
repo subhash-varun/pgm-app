@@ -10,6 +10,8 @@ import '../../widgets/filters.dart';
 import '../../widgets/infinite_scroll.dart';
 import '../../widgets/status_badge.dart';
 import 'receipt_screen.dart';
+import 'rent_ledger_screen.dart';
+import 'security_deposit_screen.dart';
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -118,6 +120,24 @@ class _PaymentsScreenState extends State<PaymentsScreen> with InfiniteScroll {
       appBar: AppBar(
         title: const Text('Payments'),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RentLedgerScreen()),
+              );
+            },
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Monthly Ledger',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SecurityDepositScreen()),
+              );
+            },
+            icon: const Icon(Icons.shield_outlined),
+            tooltip: 'Security Deposit Ledger',
+          ),
           IconButton(
             onPressed: _loading ? null : _load,
             icon: const Icon(Icons.refresh),
@@ -394,10 +414,10 @@ class _PaymentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: p.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: p.border),
       ),
       child: Column(

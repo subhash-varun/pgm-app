@@ -11,6 +11,9 @@ import '../../widgets/filters.dart';
 import '../../widgets/infinite_scroll.dart';
 import '../../widgets/status_badge.dart';
 import 'tenant_form_screen.dart';
+import 'notice_period_dialog.dart';
+import 'tenant_settlement_screen.dart';
+import '../payments/tenant_rent_history_screen.dart';
 
 class TenantsScreen extends StatefulWidget {
   const TenantsScreen({super.key});
@@ -128,7 +131,16 @@ class _TenantsScreenState extends State<TenantsScreen> with InfiniteScroll {
         actions: [
           IconButton(
             onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh),
+            icon: _loading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.palette.primary,
+                    ),
+                  )
+                : const Icon(Icons.refresh),
             tooltip: 'Refresh',
           ),
         ],
@@ -150,7 +162,7 @@ class _TenantsScreenState extends State<TenantsScreen> with InfiniteScroll {
                 SizedBox(
                   width: double.infinity,
                   child: FilterChips<String>(
-                    options: ['', 'ACTIVE', 'MOVED_OUT'],
+                    options: const ['', 'ACTIVE', 'NOTICE', 'MOVED_OUT'],
                     selected: _status,
                     label: (v) => v.isEmpty ? 'All' : capitalize(v),
                     onSelected: (v) {
@@ -175,7 +187,17 @@ class _TenantsScreenState extends State<TenantsScreen> with InfiniteScroll {
       ),
       body: RefreshIndicator(
         onRefresh: _load,
-        child: _buildBody(),
+        child: Column(
+          children: [
+            if (_loading && _data != null)
+              LinearProgressIndicator(
+                minHeight: 3,
+                backgroundColor: Colors.transparent,
+                color: context.palette.primary,
+              ),
+            Expanded(child: _buildBody()),
+          ],
+        ),
       ),
     );
   }
@@ -221,6 +243,7 @@ class _TenantsScreenState extends State<TenantsScreen> with InfiniteScroll {
           tenant: tenant,
           onEdit: () => _openForm(tenant: tenant),
           onDelete: () => _deleteTenant(tenant),
+          onRefresh: _load,
         );
       },
     );
@@ -231,59 +254,79 @@ class _TenantCard extends StatelessWidget {
   final Tenant tenant;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onRefresh;
   const _TenantCard({
     required this.tenant,
     required this.onEdit,
     required this.onDelete,
+    required this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: p.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: p.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row
           Row(
             children: [
               CircleAvatar(
-                radius: 20,
+                radius: 18,
                 backgroundColor: p.primary.withValues(alpha: 0.12),
                 child: Text(
                   toInitials(tenant.name),
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: p.primary,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      tenant.name,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: p.textPrimary,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            tenant.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: p.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: p.surfaceAlt,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Room ${tenant.roomNumber}',
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: p.textSecondary),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Room ${tenant.roomNumber} • ${tenant.email}',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: p.textSecondary,
-                      ),
+                      '${tenant.phone} • ${tenant.email}',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: p.textSecondary),
                     ),
                   ],
                 ),
@@ -291,56 +334,106 @@ class _TenantCard extends StatelessWidget {
               StatusBadge(status: tenant.status),
             ],
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 16,
-            runSpacing: 6,
-            children: [
-              _meta(p, Icons.phone_outlined, tenant.phone),
-              _meta(p, Icons.badge_outlined,
-                  '${tenant.idProofType}: ${tenant.idProofNumber}'),
-            ],
+          const SizedBox(height: 10),
+
+          // Key Info Grid
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: p.surfaceAlt.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _infoCol(p, 'Deposit', formatCurrency(tenant.depositAmount), p.success),
+                _infoCol(p, 'Advance', formatCurrency(tenant.advanceBalance), p.primary),
+                _infoCol(p, 'Check-in', formatDate(tenant.checkInDate), p.textSecondary),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
+
+          // Action Row
           Row(
             children: [
-              Icon(Icons.calendar_today_outlined,
-                  size: 14, color: p.textTertiary),
-              const SizedBox(width: 4),
-              Text(
-                'Check-in ${formatDate(tenant.checkInDate)}',
-                style: TextStyle(fontSize: 12.5, color: p.textSecondary),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => TenantRentHistoryScreen(
+                        tenantId: tenant.id,
+                        tenantName: tenant.name,
+                      ),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 34),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                icon: const Icon(Icons.history, size: 15),
+                label: const Text('Ledger', style: TextStyle(fontSize: 12.5)),
               ),
+              if (tenant.isActive) ...[
+                const SizedBox(width: 6),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final res = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => NoticePeriodDialog(tenant: tenant),
+                    );
+                    if (res == true) onRefresh();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: p.warning,
+                    minimumSize: const Size(0, 34),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    side: BorderSide(color: p.warning.withValues(alpha: 0.4)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.outbound_outlined, size: 15),
+                  label: const Text('Notice', style: TextStyle(fontSize: 12.5)),
+                ),
+              ],
+              if (tenant.isActive || tenant.isInNotice) ...[
+                const SizedBox(width: 6),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final res = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) => TenantSettlementScreen(
+                          tenantId: tenant.id,
+                          tenantName: tenant.name,
+                        ),
+                      ),
+                    );
+                    if (res == true) onRefresh();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: p.danger,
+                    minimumSize: const Size(0, 34),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    side: BorderSide(color: p.danger.withValues(alpha: 0.4)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.exit_to_app, size: 15),
+                  label: const Text('Exit', style: TextStyle(fontSize: 12.5)),
+                ),
+              ],
               const Spacer(),
-              Text(
-                'Deposit: ${formatCurrency(tenant.depositAmount)}',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: p.success,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Divider(height: 1, color: p.border),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: onEdit,
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Edit'),
-              ),
-              const SizedBox(width: 4),
-              TextButton.icon(
-                onPressed: onDelete,
-                style: TextButton.styleFrom(
-                  foregroundColor: p.danger,
-                ),
-                icon: const Icon(Icons.delete_outline, size: 18),
-                label: const Text('Delete'),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, size: 18, color: p.textSecondary),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onSelected: (val) {
+                  if (val == 'edit') onEdit();
+                  if (val == 'delete') onDelete();
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Edit Tenant')])),
+                  PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: p.danger), const SizedBox(width: 8), Text('Delete', style: TextStyle(color: p.danger))])),
+                ],
               ),
             ],
           ),
@@ -349,19 +442,13 @@ class _TenantCard extends StatelessWidget {
     );
   }
 
-  Widget _meta(AppPalette p, IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+  Widget _infoCol(AppPalette p, String label, String value, Color valueColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 14, color: p.textTertiary),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            text,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 12.5, color: p.textPrimary),
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: p.textTertiary, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 1),
+        Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor)),
       ],
     );
   }

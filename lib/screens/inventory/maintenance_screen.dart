@@ -138,13 +138,20 @@ class _MaintenanceScreenState extends State<MaintenanceScreen>
     }
   }
 
-  void _showReportIssue() {
-    showModalBottomSheet(
+  Future<void> _showReportIssue() async {
+    final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) => const _ReportIssueSheet(),
     );
+    if (created == true) {
+      _page = 0;
+      _load();
+      if (mounted) {
+        showSuccessSnack(context, 'Request submitted successfully');
+      }
+    }
   }
 
   @override
@@ -483,10 +490,22 @@ class _ReportIssueSheetState extends State<_ReportIssueSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    Navigator.of(context).pop();
-    showSuccessSnack(context, 'Request submitted successfully');
+    try {
+      await MaintenanceService.create({
+        'issueTitle': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'priority': _priority,
+      });
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ApiClient.extractError(e))),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override

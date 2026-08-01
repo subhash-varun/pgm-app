@@ -17,11 +17,20 @@ String formatPercent(num? value) {
   return '${(value ?? 0).toStringAsFixed(1)}%';
 }
 
-String formatDate(String? dateStr) {
-  if (dateStr == null || dateStr.isEmpty) return 'N/A';
+String formatDate(dynamic date) {
+  if (date == null) return 'N/A';
+  if (date is DateTime) {
+    return DateFormat('dd MMM yyyy').format(date);
+  }
+  final dateStr = date.toString();
+  if (dateStr.isEmpty) return 'N/A';
   final parsed = DateTime.tryParse(dateStr);
   if (parsed == null) return dateStr;
   return DateFormat('dd MMM yyyy').format(parsed);
+}
+
+String formatDateISO(DateTime date) {
+  return DateFormat('yyyy-MM-dd').format(date);
 }
 
 String formatDateTime(String? dateStr) {
