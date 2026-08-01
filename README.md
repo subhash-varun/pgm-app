@@ -3,9 +3,20 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web-brightgreen?style=for-the-badge)](https://flutter.dev)
+[![Download APK](https://img.shields.io/badge/Download-APK-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://drive.google.com/drive/folders/1Iijz5p_xi0bBxLKiCwBOYzi5Mrw_yBsh?usp=sharing)
 [![License](https://img.shields.io/badge/License-Proprietary-blue?style=for-the-badge)](#)
 
 A modern, cross-platform mobile application designed for Paying Guest (PG) property owners, administrators, and staff to manage properties, rooms, tenants, rent ledgers, maintenance tickets, and inventory with ease.
+
+---
+
+## 📲 Download
+
+Grab the latest Android build directly — no build setup required.
+
+**➡️ [Download APK (Google Drive)](https://drive.google.com/drive/folders/1Iijz5p_xi0bBxLKiCwBOYzi5Mrw_yBsh?usp=sharing)**
+
+> **Note:** Since the app isn't distributed via the Play Store, Android may warn about installing from an unknown source. Enable *"Install unknown apps"* for your file manager/browser when prompted, then open the downloaded `.apk` to install.
 
 ---
 
@@ -107,13 +118,22 @@ lib/
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Option 1: Install the Pre-Built APK
+The fastest way to try the app on Android — no setup required.
+
+1. Open the **[APK download folder](https://drive.google.com/drive/folders/1Iijz5p_xi0bBxLKiCwBOYzi5Mrw_yBsh?usp=sharing)** on your Android device (or download and transfer the file).
+2. Download the latest `.apk` file.
+3. Allow installation from unknown sources if prompted, then install and launch the app.
+
+### Option 2: Build from Source
+
+#### Prerequisites
 * [Flutter SDK](https://docs.flutter.dev/get-started/install) installed (`3.11.x` or higher)
 * [Dart SDK](https://dart.dev/get-dart) installed
 * Android Studio / VS Code with Flutter extension
 * An active backend instance (or connection to the deployed Spring Boot backend)
 
-### Installation
+#### Installation
 
 1. **Clone the Repository**
    ```bash
@@ -160,4 +180,3 @@ lib/
 ## 📄 License
 
 This project is proprietary and confidential. All rights reserved.
-
